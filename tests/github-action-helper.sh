@@ -611,17 +611,11 @@ install_minikube_with_none_driver() {
 # Install external snapshotter
 install_external_snapshotter() {
     echo "Installing external snapshotter version $EXTERNAL_SNAPSHOTTER_VERSION..."
+    local base="https://github.com/kubernetes-csi/external-snapshotter"
+    local ref="v${EXTERNAL_SNAPSHOTTER_VERSION}"
 
-    if ! curl -L "https://github.com/kubernetes-csi/external-snapshotter/archive/refs/tags/v${EXTERNAL_SNAPSHOTTER_VERSION}.zip" -o external-snapshotter.zip; then
-        echo "Failed to download external snapshotter" >&2
-        return 1
-    fi
-
-    unzip -d /tmp external-snapshotter.zip
-    cd "/tmp/external-snapshotter-${EXTERNAL_SNAPSHOTTER_VERSION}"
-
-    kubectl kustomize client/config/crd | kubectl create -f -
-    kubectl -n kube-system kustomize deploy/kubernetes/snapshot-controller | kubectl create -f -
+    kubectl kustomize "${base}//client/config/crd?ref=${ref}" | kubectl create -f -
+    kubectl kustomize "${base}//deploy/kubernetes/snapshot-controller?ref=${ref}" | kubectl create -f -
 }
 
 # Wait for RBD PVC clone to be bound
