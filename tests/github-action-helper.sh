@@ -674,6 +674,33 @@ create_consumer_context() {
     echo "Created consumer context: ${context_name}"
 }
 
+# Get Ceph credentials for custom pod execution tests
+get_ceph_credentials() {
+    local cluster_ns=$1
+
+    # Mon IP from configmap
+    MON_IP=$(kubectl -n "$cluster_ns" \
+        get configmap rook-ceph-mon-endpoints \
+        -o jsonpath='{.data.csi-cluster-config-json}' \
+        | python3 -c \
+        "import sys,json; \
+        print(json.load(sys.stdin)[0]['monitors'][0])")
+
+    # User ID and key from secret
+    USER_ID=$(kubectl -n "$cluster_ns" \
+        get secret \
+        -l app=rook-csi-cephfs-provisioner \
+        -o jsonpath='{.items[0].data.adminID}' \
+        | base64 -d)
+    USER_KEY=$(kubectl -n "$cluster_ns" \
+        get secret \
+        -l app=rook-csi-cephfs-provisioner \
+        -o jsonpath='{.items[0].data.adminKey}' \
+        | base64 -d)
+
+    echo "$MON_IP $USER_ID $USER_KEY"
+}
+
 ########
 # MAIN #
 ########
